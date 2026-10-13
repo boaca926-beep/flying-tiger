@@ -4,7 +4,7 @@ import uuid
 
 import streamlit as st
 
-from agent import MODEL, run_agent
+from agent import MODEL, run_agent, db_last_updated, init_outputs_table, log_output
 
 st.set_page_config(page_title="Flying Tiger", page_icon="🐯", layout="wide")
 
@@ -37,19 +37,30 @@ def make_message(role: str, **extra) -> dict:
     return {"id": uuid.uuid4().hex[:8], "role": role, **extra}
 
 
+@st.cache_resource
+def _ensure_schema():
+    """Create the Postgres outputs table once per container."""
+    init_outputs_table()
+    return True
+
+
 def call_agent(prompt: str):
     t0 = time.perf_counter()
     try:
         answer, meta = run_agent(prompt, verbose=False)
     except Exception as e:
-        return (
-            f"⚠️ Error: `{type(e).__name__}: {e}`",
-            {"sql": [], "products": [], "kind": "error", "error": str(e)},
-            time.perf_counter() - t0,
-        )
+        answer = f"⚠️ Error: `{type(e).__name__}: {e}`"
+        meta = {"sql": [], "products": [], "kind": "error", "error": str(e)}
+
     if not isinstance(meta, dict):
         meta = {"sql": [], "products": [], "kind": "empty", "error": None}
-    return answer, meta, time.perf_counter() - t0
+
+    elapsed = time.perf_counter() - t0
+
+    # Log to Postgres. Never raises — failures are swallowed inside log_output.
+    log_output(prompt, answer, meta, elapsed)
+
+    return answer, meta, elapsed
 
 
 # ---------- product card ----------
@@ -121,6 +132,11 @@ def render_sidebar():
             if st.button(ex, use_container_width=True, key=f"ex__{ex}"):
                 st.session_state.pending = ex
         st.divider()
+
+        updated = db_last_updated()
+        if updated:
+            st.caption(f"📅 Data from `{updated}`")
+
         st.caption(f"Model: `{MODEL}`")
         st.toggle("Show SQL", key="show_sql")
         st.toggle("Show raw text", key="show_raw",
@@ -166,6 +182,7 @@ def render_message(m: dict):
 # ---------- main ----------
 def main():
     init_state()
+    _ensure_schema()
     render_sidebar()
 
     for m in st.session_state.messages:

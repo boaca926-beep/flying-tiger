@@ -4,6 +4,7 @@ __pycache__/
 .env
 *.db
 !flyingtiger.db
+docker-compose.yml
 products.csv
 products.json
 scrape.log

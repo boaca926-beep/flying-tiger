@@ -4,12 +4,14 @@ import os
 import sqlite3
 import sys
 
+import psycopg2
 from dotenv import load_dotenv
 from openai import OpenAI
 
 load_dotenv()
 
 DB_PATH = "flyingtiger.db"
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 # --- LLM config ---
 BASE_URL = os.environ.get("LLM_BASE_URL", "https://api.groq.com/openai/v1")
@@ -110,6 +112,89 @@ TOOLS = [{
         },
     },
 }]
+
+
+# ---------- Postgres logging ----------
+def _db_conn():
+    """Open a Postgres connection, or return None if not configured/unreachable."""
+    if not DATABASE_URL:
+        return None
+    try:
+        return psycopg2.connect(DATABASE_URL, connect_timeout=5)
+    except Exception as e:
+        print(f"[db] connect failed: {type(e).__name__}: {e}")
+        return None
+
+
+def init_outputs_table():
+    """Create the outputs table if missing. Idempotent. Never raises."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS outputs (
+                    id            BIGSERIAL PRIMARY KEY,
+                    created_at    TIMESTAMPTZ DEFAULT NOW(),
+                    question      TEXT,
+                    answer        TEXT,
+                    sql_queries   TEXT,
+                    product_count INTEGER,
+                    elapsed_ms    INTEGER,
+                    error         TEXT,
+                    kind          TEXT
+                )
+            """)
+            cur.execute("""
+                CREATE INDEX IF NOT EXISTS idx_outputs_created_at
+                    ON outputs (created_at)
+            """)
+    except Exception as e:
+        print(f"[init_outputs] {type(e).__name__}: {e}")
+    finally:
+        conn.close()
+
+
+def log_output(question, answer, meta, elapsed):
+    """Write one row per agent call. Never raises."""
+    conn = _db_conn()
+    if not conn:
+        return
+    try:
+        with conn, conn.cursor() as cur:
+            cur.execute(
+                """INSERT INTO outputs
+                   (question, answer, sql_queries, product_count,
+                    elapsed_ms, error, kind)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                (
+                    question,
+                    answer,
+                    json.dumps(meta.get("sql", [])),
+                    len(meta.get("products", [])),
+                    int(elapsed * 1000),
+                    meta.get("error"),
+                    meta.get("kind"),
+                ),
+            )
+    except Exception as e:
+        print(f"[log_output] {type(e).__name__}: {e}")
+    finally:
+        conn.close()
+
+
+def db_last_updated() -> str | None:
+    """ISO timestamp of the last DB build, or None if unavailable."""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute(
+            "SELECT value FROM meta WHERE key = 'last_updated'"
+        ).fetchone()
+        conn.close()
+        return row[0] if row else None
+    except Exception:
+        return None
 
 
 # ---------- SQL runner ----------

@@ -64,3 +64,13 @@ Verify a domain in Resend
 
 * Deploy streamlit to Render
 
+* Test if Postgres is working: docker exec -it ft-postgres psql -U ft_user -d pilot -c "SELECT version();"
+
+* Check if Postgres takes input: docker exec -it ft-postgres psql -U ft_user -d pilot   -c "SELECT id, question, product_count, elapsed_ms, created_at FROM outputs ORDER BY id DESC LIMIT 5;"
+
+* psql meta-command: docker exec -it ft-postgres psql -U ft_user -d pilot -c "\dt"
+
+* SQL query: docker exec -it ft-postgres psql -U ft_user -d pilot \
+  -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
+
+* Table structure: docker exec -it ft-postgres psql -U ft_user -d pilot -c "\d outputs"
