@@ -62,3 +62,5 @@ Disable Test Mode: In your app.py, set TEST_RECIPIENT = None. This allows the co
 Verify a domain in Resend
 1. Go to Resend Dashboard -> Domains -> Add Domain
 
+* Deploy streamlit to Render
+
