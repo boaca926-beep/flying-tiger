@@ -1,0 +1,26 @@
+databases:
+  - name: flyingtiger
+    plan: free
+    region: frankfurt
+    databaseName: pilot
+    user: ft_user
+
+services:
+  - type: web
+    name: flyingtiger
+    runtime: python
+    plan: free
+    region: frankfurt
+    branch: main
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
+    autoDeployTrigger: commit
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: openai/gpt-oss-120b
+      - key: DATABASE_URL
+        fromDatabase:
+          name: flyingtiger-outputs-db
+          property: connectionString
