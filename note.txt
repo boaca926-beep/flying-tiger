@@ -1,0 +1,64 @@
+1. Start with Streamlit, running locally. 30 minutes, works immediately, no deployment.
+
+2. Add Telegram if you want mobile access. Another hour.
+
+3. Only deploy publicly if you have a real reason. A private bot or a local Streamlit is enough for personal use and demoing to friends.
+
+4. If you do deploy, switch to a hosted LLM API — it's cheaper and simpler than running GPU infrastructure.
+
+
+# check vllm condition: docker logs -f vllm-server
+# check gpu: nvidia-smi
+# GUI web: uv run streamlit run app.py
+# check db:
+# ls -la asianfood_products.db
+# should be ~150-200 KB
+
+# uv run python -c "
+# import sqlite3
+# c = sqlite3.connect('asianfood_products.db')
+# print('rows:', c.execute('SELECT COUNT(*) FROM products').fetchone()[0])
+# "
+# should print: rows: 717
+
+# Stop for the day: keep the image, but stop the container
+# docker compose stop
+# docker compose up -d # restart container
+# uv run agent.py # on prompt
+# uv run streamlit run app.py
+
+# Stop the program: delete docker image
+# docker stop vllm-server
+# docker rm vllm-server
+# docker rmi vllm/vllm-openai:v0.11.0
+# sudo rm -rf ~/.cache/vllm
+
+# Temporary
+# Install cloudflared
+# curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o cloudflared
+# chmod +x cloudflared
+#sudo mv cloudflared /usr/local/bin/
+
+# Expose your local Streamlit on a public URL
+# cloudflared tunnel --url http://localhost:8501
+
+#Item	Your cost	What you'd charge
+#VM + domain	€5/month	—
+#LLM API (Groq free tier)	€0	—
+#Maintenance (2–4 hrs/month)	Your time	€50–200/month
+#Total	€5–15/month	€50–200/month
+
+# uv run python -c "import os; from dotenv import load_dotenv; load_dotenv(); print('key set:', bool(os.environ.get('RESEND_API_KEY')))"
+
+# In real production
+Email: Fix the Domain and Sender Identity
+
+The single most important fix is to stop using Resend's test mode.
+Verify Your Domain: You must add and verify at least one domain you own in the Resend dashboard to send emails to real customers. 
+It's a best practice to use a subdomain (e.g., updates.yourdomain.com) instead of the root domain for sending emails.
+Update RESEND_FROM: Once verified, change the RESEND_FROM environment variable to use an address on that domain (e.g., Asian Food Market <orders@yourdomain.com>).
+Disable Test Mode: In your app.py, set TEST_RECIPIENT = None. This allows the code to send to the real address the user typed in the form.
+
+Verify a domain in Resend
+1. Go to Resend Dashboard -> Domains -> Add Domain
+
