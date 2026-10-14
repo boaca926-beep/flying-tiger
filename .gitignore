@@ -1,10 +1,21 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+
+# Env / secrets
 .env
+.streamlit/secrets.toml
+
+# Local database
 *.db
 !flyingtiger.db
-docker-compose.yml
+
+# Scraper outputs (only if regenerable)
 products.csv
 products.json
 scrape.log
+
+# Personal
+note.txt
