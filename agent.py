@@ -94,7 +94,7 @@ SYSTEM_PROMPT = (
     "- Aggregate queries (COUNT/AVG/SUM): select only the aggregate.\n"
     "- Always ORDER BY something (price, price_per_100g, or discount).\n"
     "- Call run_sql ONCE. Only retry if the query returned an ERROR.\n"
-    "- Answer in the user's language.\n\n"
+    "- Answer in English unless the user writes in another language.\n"
     "When presenting results, list items with prices. Keep it concise."
 )
 
