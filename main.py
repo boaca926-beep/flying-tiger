@@ -16,7 +16,7 @@ import os
 import re
 import sqlite3
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 
@@ -160,7 +160,7 @@ def parse_product(p: dict) -> dict | None:
         "created_at": p.get("created_at"),
         "updated_at": p.get("updated_at"),
         "published_at": p.get("published_at"),
-        "scraped_at": datetime.now().isoformat(),
+        "scraped_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -194,6 +194,12 @@ def init_db():
             updated_at TEXT,
             published_at TEXT,
             scraped_at TEXT
+        )
+    """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS meta (
+            key   TEXT PRIMARY KEY,
+            value TEXT
         )
     """)
     conn.commit()
@@ -297,6 +303,15 @@ def main():
     print(f"        {avail} in stock")
     print(f"        {sale} on sale")
     print(f"        {with_grams} with weight data")
+
+    now = datetime.now(timezone.utc).isoformat()
+    cur.execute(
+        "INSERT INTO meta (key, value) VALUES ('last_updated', ?) "
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+        (now,),
+    )
+    conn.commit()
+    print(f"        last_updated = {now}")
 
     export_csv(cur)
     export_json(cur)
