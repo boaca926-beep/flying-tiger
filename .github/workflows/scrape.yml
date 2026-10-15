@@ -1,0 +1,38 @@
+name: Update Flying Tiger Database
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # daily at 06:00 UTC
+  workflow_dispatch:       # manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        run: python main.py
+        env:
+          FT_BASE_URL: https://flyingtiger.com
+          FT_CURRENCY: EUR
+
+      - name: Commit and push updated database
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f flyingtiger.db products.csv products.json
+          git diff --staged --quiet || git commit -m "Update DB: $(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
