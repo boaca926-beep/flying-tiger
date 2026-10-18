@@ -74,3 +74,10 @@ Verify a domain in Resend
   -c "SELECT table_name FROM information_schema.tables WHERE table_schema='public';"
 
 * Table structure: docker exec -it ft-postgres psql -U ft_user -d pilot -c "\d outputs"
+
+The setup flow is almost identical, so you already know how to do it.
+Step	Render Postgres	Neon Postgres
+1. Sign up	  Render account	                      Neon account (can use GitHub sign-in)
+2. Create DB	"New" -> "PostgreSQL"	                "New Project" -> "Create"
+3. Get URL	  Find connection string in dashboard	  Click "Connect" button to copy the string
+4. Connect	  Paste URL into DATABASE_URL	          Paste URL into DATABASE_URL
