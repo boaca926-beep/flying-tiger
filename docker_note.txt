@@ -1,0 +1,28 @@
+1. build image using Dockfile locally:
+> docker build -t flyingtiger:latest .
+
+2. check images
+> docker images
+// remove a image: > docker rmi <image name>
+
+3. confirm the image comes from the corresponding Dockerfile
+> docker image inspect flyingtiger:latest --format '{{.Created}} {{.Config.Cmd}}'
+
+# Push the image
+1. dependency check
+docker run --rm flyingtiger:latest uv run python -c "import openai, streamlit, psycopg2; print('deps ok')"
+
+2. check Docker ID
+> docker info | grep Username (if logged in)
+Docker ID: boaca926
+> docker tag flyingtiger:latest yourname/flyingtiger:latest
+> docker login
+> docker push yourname/flyingtiger:latest
+> docker manifest inspect boaca926/flyingtiger:latest | head // verify it landed
+
+2.1 check if image is publicly reachable at: https://hub.docker.com/r/boaca926/flyingtiger
+2.2 test run docker-compose locally
+> echo "GROQ_API_KEY=your_key" > .env
+> docker compose up --build -d
+> docker compose logs -f ft-test
+> docker compose logs -f ft-test

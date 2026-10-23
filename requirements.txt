@@ -4,3 +4,4 @@ python-dotenv
 requests
 resend
 psycopg2-binary
+shopscout
