@@ -1,3 +1,5 @@
+# check update
+
 FROM python:3.12-slim
 
 # 1. Tvinga UTF-8 för att lösa UnicodeEncodeError (Alternativ A)
