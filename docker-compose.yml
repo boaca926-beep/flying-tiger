@@ -1,4 +1,25 @@
 services:
+  ft-test:
+    build: .  # Bygger från Dockerfile i samma mapp
+    container_name: ft-test
+    ports:
+      - "8501:8501"
+    environment:
+      # Miljövariabler för att lösa Unicode-felet
+      - PYTHONUTF8=1
+      - PYTHONIOENCODING=utf-8
+      - LANG=C.UTF-8
+      
+      # Miljövariabler för databasanslutningen (VIKTIGT: DB_HOST är ft-postgres)
+      - DB_HOST=ft-postgres
+      - DB_PORT=5432
+      - DB_USER=ft_user
+      - DB_PASSWORD=dev
+      - DB_NAME=pilot
+    depends_on:
+      postgres:
+        condition: service_healthy # Vänta tills databasen är redo innan appen startar
+
   postgres:
     image: postgres:16
     container_name: ft-postgres

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.github/
+.python-version
+requirements-dev.txt
+docs/
+dist/
+*.md
+.env
+.env.*
+note.txt
+test_app.py
+docker-compose.yml
+render.yaml

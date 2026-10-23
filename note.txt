@@ -81,3 +81,6 @@ Step	Render Postgres	Neon Postgres
 2. Create DB	"New" -> "PostgreSQL"	                "New Project" -> "Create"
 3. Get URL	  Find connection string in dashboard	  Click "Connect" button to copy the string
 4. Connect	  Paste URL into DATABASE_URL	          Paste URL into DATABASE_URL
+
+# Deploy websit to S3 as an HTML file by converting the Streamlit app into Stlite
+> npx @stlite/cli html ./your-streamlit-project -o app.html
