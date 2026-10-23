@@ -90,16 +90,21 @@ def render_product_card(p: dict) -> None:
             price = p.get("price")
             compare = p.get("compare_at_price")
             on_sale = p.get("on_sale")
+            cur = {"EUR": "€", "DKK": "kr", "SEK": "kr", "USD": "$"}.get(
+                (p.get("currency") or "").upper(), "€"
+            )
 
-            if price is not None:
+            if price:
                 if on_sale and compare and compare > price:
                     pct = int(100 * (1 - price / compare))
                     st.markdown(
-                        f"### {price:.2f}  "
-                        f"~~{compare:.2f}~~  :red[**−{pct}%**]"
+                        f"### {cur}{price:.2f}  "
+                        f"~~{cur}{compare:.2f}~~  :red[**−{pct}%**]"
                     )
                 else:
-                    st.markdown(f"### {price:.2f}")
+                    st.markdown(f"### {cur}{price:.2f}")
+            else:
+                st.caption("price unavailable")
 
             bits = []
             if p.get("available") is False:

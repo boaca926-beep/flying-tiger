@@ -4,6 +4,7 @@
 2. check images
 > docker images
 // remove a image: > docker rmi <image name>
+// stop containers: > docker stop $(docker ps -q)
 
 3. confirm the image comes from the corresponding Dockerfile
 > docker image inspect flyingtiger:latest --format '{{.Created}} {{.Config.Cmd}}'
@@ -24,5 +25,4 @@ Docker ID: boaca926
 2.2 test run docker-compose locally
 > echo "GROQ_API_KEY=your_key" > .env
 > docker compose up --build -d
-> docker compose logs -f ft-test
 > docker compose logs -f ft-test

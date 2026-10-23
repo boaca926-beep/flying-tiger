@@ -58,26 +58,26 @@ Notes:
 
 Examples:
   'christmas decorations under 50 kr' →
-    SELECT shopify_id, title, price, available, handle, image_url, grams
+    SELECT shopify_id, title, price, currency, available, handle, image_url, grams
     FROM products
     WHERE (LOWER(title) LIKE '%christmas%' OR LOWER(category) LIKE '%christmas%')
       AND price < 50
     ORDER BY price ASC LIMIT 8
 
   'what's on sale?' →
-    SELECT shopify_id, title, price, compare_at_price, available, handle, image_url, grams
+    SELECT shopify_id, title, price, currency, compare_at_price, available, handle, image_url, grams
     FROM products
     WHERE on_sale = 1
     ORDER BY (compare_at_price - price) DESC LIMIT 8
 
   'toys for kids' →
-    SELECT shopify_id, title, price, available, handle, image_url, grams
+    SELECT shopify_id, title, price, currency, available, handle, image_url, grams
     FROM products
     WHERE product_type = 'Toys'
     ORDER BY price ASC LIMIT 8
 
   'cheapest mugs' →
-    SELECT shopify_id, title, price, available, handle, image_url, grams
+    SELECT shopify_id, title, price, currency, available, handle, image_url, grams
     FROM products
     WHERE LOWER(title) LIKE '%mug%'
     ORDER BY price ASC LIMIT 8
@@ -89,7 +89,7 @@ SYSTEM_PROMPT = (
     "never answer from memory.\n\n"
     f"{SCHEMA}\n"
     "REMINDER:\n"
-    "- Product queries: select shopify_id, title, price, available, "
+    "- Product queries: select shopify_id, title, price, currency, available, "
     "handle, image_url, grams.\n"
     "- Aggregate queries (COUNT/AVG/SUM): select only the aggregate.\n"
     "- Always ORDER BY something (price, price_per_100g, or discount).\n"
@@ -227,6 +227,7 @@ _ROW_ALIASES = {
     "grams": "grams", "weight_g": "grams",
     "compare_at_price": "compare_at_price",
     "on_sale": "on_sale",
+    "currency": "currency",
 }
 
 
@@ -242,21 +243,26 @@ def _row_to_product(row: dict) -> dict | None:
     n = _normalize_row(row)
     if "title" not in n or "price" not in n:
         return None
-    if n.get("price") is None:
-        return None
+
+    raw_price = n.get("price")
+    # 0 / 0.0 in this dataset means "unknown", not "free"
+    price = float(raw_price) if raw_price not in (None, 0, 0.0) else None
+
+    raw_cmp = n.get("compare_at_price")
+    compare = float(raw_cmp) if raw_cmp not in (None, 0, 0.0) else None
+
     avail = n.get("available")
     return {
         "id": n.get("shopify_id"),
         "name": n["title"],
-        "price": float(n["price"]),
-        "compare_at_price": (
-            float(n["compare_at_price"]) if n.get("compare_at_price") else None
-        ),
+        "price": price,
+        "compare_at_price": compare,
         "on_sale": bool(n.get("on_sale")) if n.get("on_sale") is not None else False,
         "available": None if avail is None else bool(avail),
         "handle": n.get("handle"),
         "image_url": n.get("image_url"),
         "grams": n.get("grams"),
+        "currency": n.get("currency"),
     }
 
 
@@ -278,7 +284,8 @@ def run_agent(question, verbose=False):
 
     meta = {
         "sql":      [str, ...],
-        "products": [{id, name, price, available, handle, image_url, grams, ...}, ...],
+        "products": [{id, name, price, currency, available, handle,
+                      image_url, grams, ...}, ...],
         "kind":     "products" | "aggregate" | "empty" | "error",
         "error":    str | None,
     }
